@@ -3,23 +3,127 @@
 <head>
   <meta charset="utf-8" />
   <title>My Training</title>
-  <link rel="stylesheet" href="test.css">
+  <style>
+    body { font-family: Arial; background: #f2f2f2; padding: 20px; }
+    video { width: 100%; max-width: 640px; background: #000; border-radius: 10px; }
+    .controls { margin-top: 10px; }
+    button, select {
+      padding: 10px; margin-right: 5px; border-radius: 8px; border: 1px solid #444;
+    }
+  </style>
 </head>
 <body>
-  <div class="camera-ui">
-    <video id="cameraFeed" autoplay playsinline></video>
 
-    <div class="controls">
-      <select id="videoSource"></select>
-      <button id="switchBtn">Switch Camera</button>
-      <button id="captureBtn">Qaado Sawir</button>
-      <a id="downloadLink" style="display:none">Download</a>
-    </div>
+  <h2>Camera Stream</h2>
 
-    <!-- Canvas for snapshot (hidden) -->
-    <canvas id="snapshotCanvas" style="display:none"></canvas>
+  <video id="cameraFeed" autoplay playsinline></video>
+
+  <div class="controls">
+    <select id="videoSource"></select>
+    <button id="switchBtn">Switch Camera</button>
+    <button id="captureBtn">Qaado Sawir</button>
+    <a id="downloadLink" style="display:none">Download</a>
   </div>
 
-  <script src="text.js"></script>
+  <canvas id="snapshotCanvas" style="display:none"></canvas>
+
+<script>
+/* =============================
+     CAMERA JS – FULL WORKING
+   ============================= */
+
+const video     = document.getElementById("cameraFeed");
+const videoSel  = document.getElementById("videoSource");
+const switchBtn = document.getElementById("switchBtn");
+const captureBtn= document.getElementById("captureBtn");
+const dLink     = document.getElementById("downloadLink");
+const canvas    = document.getElementById("snapshotCanvas");
+
+let stream = null;
+let currentDeviceId = null;
+
+async function startCamera(deviceId = null) {
+    try {
+        // Stop previous stream if exists
+        if (stream) stream.getTracks().forEach(t => t.stop());
+
+        let constraints = {
+            video: deviceId ? { deviceId: { exact: deviceId } } : true,
+            audio: false
+        };
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+
+        video.onloadedmetadata = () => {
+            video.play();
+
+            let track = stream.getVideoTracks()[0];
+            currentDeviceId = track.getSettings().deviceId;
+        };
+
+        await loadDevices();
+    } 
+    catch (err) {
+        alert("Camera error: " + err.message);
+        console.error(err);
+    }
+}
+
+async function loadDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cams = devices.filter(d => d.kind === "videoinput");
+
+    videoSel.innerHTML = "";
+
+    cams.forEach((cam, i) => {
+        let opt = document.createElement("option");
+        opt.value = cam.deviceId;
+        opt.text = cam.label || `Camera ${i+1}`;
+        videoSel.appendChild(opt);
+    });
+
+    if (currentDeviceId) videoSel.value = currentDeviceId;
+}
+
+videoSel.addEventListener("change", () => {
+    startCamera(videoSel.value);
+});
+
+switchBtn.addEventListener("click", () => {
+    let options = [...videoSel.options].map(o => o.value);
+    let index = options.indexOf(currentDeviceId);
+    let next = options[(index + 1) % options.length];
+    startCamera(next);
+});
+
+captureBtn.addEventListener("click", () => {
+    let w = video.videoWidth;
+    let h = video.videoHeight;
+
+    if (w === 0 || h === 0) {
+        alert("Camera weli ma furmin.");
+        return;
+    }
+
+    canvas.width = w;
+    canvas.height = h;
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, w, h);
+
+    canvas.toBlob(blob => {
+        let url = URL.createObjectURL(blob);
+        dLink.href = url;
+        dLink.download = "snapshot.png";
+        dLink.style.display = "inline";
+        dLink.textContent = "Download Sawirka";
+    });
+});
+
+// Start on load
+startCamera();
+
+</script>
+
 </body>
 </html>
