@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="so">
+<head>
+  <meta charset="utf-8" />
+  <title>My Training</title>
+  <link rel="stylesheet" href="test.css">
+</head>
+<body>
+  <div class="camera-ui">
+    <video id="cameraFeed" autoplay playsinline></video>
+
+    <div class="controls">
+      <select id="videoSource"></select>
+      <button id="switchBtn">Switch Camera</button>
+      <button id="captureBtn">Qaado Sawir</button>
+      <a id="downloadLink" style="display:none">Download</a>
+    </div>
+
+    <!-- Canvas for snapshot (hidden) -->
+    <canvas id="snapshotCanvas" style="display:none"></canvas>
+  </div>
+
+  <script src="text.js"></script>
+</body>
+</html>
